@@ -1,0 +1,7 @@
+apiVersion: operator.ccp.cisco.com/v1alpha1
+kind: Istio
+metadata:
+  name: istio-sample
+spec:
+  # Add fields here
+  foo: bar

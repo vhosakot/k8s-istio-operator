@@ -1,0 +1,3 @@
+version: "2"
+domain: ccp.cisco.com
+repo: _/home/ccpuser/ccp-istio-operator
