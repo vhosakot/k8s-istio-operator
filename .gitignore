@@ -22,3 +22,8 @@ bin
 *.swp
 *.swo
 *~
+
+# kubebuilder_2.0.0 files needed for "make test"
+kubebuilder_2.0.0-alpha.1_linux_amd64*
+
+kustomize
