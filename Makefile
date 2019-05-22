@@ -7,15 +7,15 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 all: manager
 
 # Run tests
-test: generate fmt vet manifests
+test: fmt vet manifests
 	go test ./api/... ./controllers/... -coverprofile cover.out
 
 # Build manager binary
-manager: generate fmt vet
+manager: fmt vet
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt vet
+run: fmt vet
 	go run ./main.go
 
 # Install CRDs into a cluster
@@ -57,7 +57,7 @@ docker-push:
 # download controller-gen if necessary
 controller-gen:
 ifeq (, $(shell which controller-gen))
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.0-beta.1
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_GEN=$(shell go env GOPATH)/bin/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)

@@ -19,8 +19,8 @@ import (
 	"flag"
 	"os"
 
-	operatorv1alpha1 "_/home/ccpuser/ccp-istio-operator/api/v1alpha1"
-	"_/home/ccpuser/ccp-istio-operator/controllers"
+	operatorv1alpha1 "wwwin-github.cisco.com/CPSG/ccp-istio-operator/api/v1alpha1"
+	"wwwin-github.cisco.com/CPSG/ccp-istio-operator/controllers"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"

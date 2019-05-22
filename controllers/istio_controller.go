@@ -22,7 +22,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "_/home/ccpuser/ccp-istio-operator/api/v1alpha1"
+	operatorv1alpha1 "wwwin-github.cisco.com/CPSG/ccp-istio-operator/api/v1alpha1"
+)
+
+var (
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 // IstioReconciler reconciles a Istio object
@@ -39,6 +43,7 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("istio", req.NamespacedName)
 
 	// your logic here
+	setupLog.Info("inside Reconcile() in controllers/istio_controller.go")
 
 	return ctrl.Result{}, nil
 }
