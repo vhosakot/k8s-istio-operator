@@ -34,10 +34,6 @@ fmt:
 vet:
 	go vet ./...
 
-# Build the docker image
-docker-build: test
-	docker build . -t ${IMG}:${TAG}
-
 # Deploy ccp-istio-operator on k8s
 deploy-k8s:
 	kubectl apply -f manifests/ccp-istio-operator.yaml
@@ -48,7 +44,14 @@ deploy-k8s:
 delete-k8s:
 	-kubectl delete -f manifests/ccp-istio-operator.yaml
 
-# Push the docker image
+# Build docker image
+docker-build: test
+	# eval $(minikube docker-env)
+	docker build . -t ${IMG}:${TAG}
+	# update built image in manifests/ccp-istio-operator.yaml
+	# sed -i'' -e 's@image: .*@image: '"${IMG}:${TAG}"'@' manifests/ccp-istio-operator.yaml
+
+# Push docker image
 docker-push:
 	docker push ${IMG}:${TAG}
 

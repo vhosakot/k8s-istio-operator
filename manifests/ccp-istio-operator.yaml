@@ -458,5 +458,5 @@ spec:
     spec:
       containers:
       - name: my-ubuntu-pod
-        image: ccp-istio-operator:9b04dea
+        image: ccp-istio-operator:e27087c
         imagePullPolicy: Never
