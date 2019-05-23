@@ -1,4 +1,3 @@
-# Image URL to use all building/pushing image targets
 IMG ?= ccp-istio-operator
 TAG ?= $(shell git describe --always --abbrev=7 2>/dev/null || echo devbuild)
 
@@ -18,13 +17,19 @@ test: fmt vet
 	  go test ./api/... ./controllers/... -coverprofile cover.out
 	rm -rf kubebuilder_2.0.0-alpha.1_linux_amd64*
 
-# Build manager binary
-manager: fmt vet
+# Build manager binary at bin/manager
+build-binary: fmt vet
 	go build -o bin/manager main.go
+	# to run the binary do:
+	  # kubectl apply -f helm/crd.yaml
+	  # ./bin/manager
 
-# Run against the configured Kubernetes cluster in ~/.kube/config
-run: fmt vet
+# Run ccp-istio-operator go binary against the configured Kubernetes cluster in ~/.kube/config
+run-binary: fmt vet
+	# create ccp-istio-operator CRD
+	kubectl apply -f helm/crd.yaml
 	go run ./main.go
+	# deploy istio CR by doing "kubectl apply -f ccp-istio-cr.yaml"
 
 # Run go fmt against code
 fmt:
@@ -36,33 +41,38 @@ vet:
 
 # Deploy ccp-istio-operator on k8s
 deploy-k8s:
-	kubectl apply -f manifests/ccp-istio-operator.yaml
+	# use locally built docker image in helm/deployment.yaml
+	sed -i'' -e 's@image: .*@image: '"${IMG}:${TAG}"'@' helm/deployment.yaml
+	# update imagePullPolicy to "Never" in helm/deployment.yaml to
+	# pull locally built docker image into k8s pod
+	sed -i'' -e 's@imagePullPolicy: .*@imagePullPolicy: 'Never'@' helm/deployment.yaml
+	kubectl apply -f ./helm/
 	kubectl get all --all-namespaces | grep ccp-istio-operator
 	kubectl get crd | grep istios.operator.ccp.cisco.com
 
 # Delete ccp-istio-operator on k8s
 delete-k8s:
-	-kubectl delete -f manifests/ccp-istio-operator.yaml
+	-kubectl delete -f ./helm/
 
 # Build docker image
 docker-build: test
-	# eval $(minikube docker-env)
+	-eval $(minikube docker-env)
 	docker build . -t ${IMG}:${TAG}
-	# update built image in manifests/ccp-istio-operator.yaml
-	# sed -i'' -e 's@image: .*@image: '"${IMG}:${TAG}"'@' manifests/ccp-istio-operator.yaml
 
 # Push docker image
 docker-push:
 	docker push ${IMG}:${TAG}
 
-# Clean docker image and other binaries
+# Delete docker image, ccp-istio-operator on k8s and other binaries
 clean:
 	-docker images --format "{{.ID}} {{.Repository}}" | \
 	  grep '<none>\|ccp-istio-operator\|golang\|gcr.io/distroless/static' | \
 	  awk '{print $1}' | xargs docker rmi
-	rm -rf ./manager
+	-kubectl delete -f ./helm/
+	rm -rf ./bin
 	rm -rf kubebuilder_2.0.0-alpha.1_linux_amd64*
 	rm -rf ./kustomize
+	rm -rf ./cover.out
 
 ##################################################################################################
 # Code generation make targets, use them only if needed, usually not needed for dev, test and CI #
