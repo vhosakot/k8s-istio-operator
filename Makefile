@@ -26,10 +26,6 @@ manager: fmt vet
 run: fmt vet
 	go run ./main.go
 
-# Install istio CRD into a cluster
-install-istio-crd:
-	kubectl apply -f config/crd/bases
-
 # Run go fmt against code
 fmt:
 	go fmt ./...
@@ -42,29 +38,15 @@ vet:
 docker-build: test
 	docker build . -t ${IMG}:${TAG}
 
-# Deploy ccp-istio-operator on k8s cluster using kustomize
-# https://book.kubebuilder.io/quick-start.html#installation
-os ?= $(shell go env GOOS)
-arch ?= $(shell go env GOARCH)
-deploy-kustomize:
-	curl -o kustomize -sL https://go.kubebuilder.io/kustomize/${os}/${arch}
-	chmod 777 ./kustomize
-	@echo "updating kustomize image patch file for manager resource"
-	sed -i'' -e 's@image: .*@image: '"${IMG}:${TAG}"'@' ./config/default/manager_image_patch.yaml
-	# eval $(minikube docker-env)
-	./kustomize build config/default | kubectl apply -f -
-	# kubectl logs ccp-istio-operator-controller-manager-0 -n=ccp-istio-operator-system -c=manager
+# Deploy ccp-istio-operator on k8s
+deploy-k8s:
+	kubectl apply -f manifests/ccp-istio-operator.yaml
 	kubectl get all --all-namespaces | grep ccp-istio-operator
-	rm -rf ./kustomize
+	kubectl get crd | grep istios.operator.ccp.cisco.com
 
-delete-kustomize:
-	curl -o kustomize -sL https://go.kubebuilder.io/kustomize/${os}/${arch}
-	chmod 777 ./kustomize
-	@echo "updating kustomize image patch file for manager resource"
-	sed -i'' -e 's@image: .*@image: '"${IMG}:${TAG}"'@' ./config/default/manager_image_patch.yaml
-	-./kustomize build config/default | kubectl delete -f -
-	-kubectl get all --all-namespaces | grep ccp-istio-operator
-	rm -rf ./kustomize
+# Delete ccp-istio-operator on k8s
+delete-k8s:
+	-kubectl delete -f manifests/ccp-istio-operator.yaml
 
 # Push the docker image
 docker-push:
