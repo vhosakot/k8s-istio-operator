@@ -24,8 +24,7 @@ import (
 
 // IstioSpec defines the desired state of Istio
 type IstioSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Foo string `json:"foo"`
 }
 
 // IstioStatus defines the observed state of Istio

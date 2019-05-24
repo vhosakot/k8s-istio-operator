@@ -39,11 +39,18 @@ type IstioReconciler struct {
 // +kubebuilder:rbac:groups=operator.ccp.cisco.com,resources=istios/status,verbs=get;update;patch
 
 func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("istio", req.NamespacedName)
+	ctx := context.Background()
+	var Istio operatorv1alpha1.Istio
 
-	// your logic here
-	setupLog.Info("inside Reconcile() in controllers/istio_controller.go")
+	r.Log.Info("inside Reconcile() function in istio_controller.go")
+
+	if err := r.Get(ctx, req.NamespacedName, &Istio); err != nil {
+		r.Log.Info("Istio CR deleted: ", "name", req.NamespacedName)
+	} else {
+		r.Log.Info("Istio CR created: ", "name", req.NamespacedName)
+		r.Log.Info("Istio CR spec:", "spec", Istio.Spec)
+		r.Log.Info("", "foo", Istio.Spec.Foo)
+	}
 
 	return ctrl.Result{}, nil
 }

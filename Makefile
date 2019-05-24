@@ -28,7 +28,7 @@ build-binary: fmt vet
 run-binary: fmt vet
 	# create ccp-istio-operator CRD
 	kubectl apply -f helm/crd.yaml
-	go run ./main.go
+	go run main.go
 	# deploy istio CR by doing "kubectl apply -f ccp-istio-cr.yaml"
 
 # Run go fmt against code
@@ -56,7 +56,6 @@ delete-k8s:
 
 # Build docker image
 docker-build: test
-	-eval $(minikube docker-env)
 	docker build . -t ${IMG}:${TAG}
 
 # Push docker image
@@ -70,7 +69,7 @@ clean:
 	  awk '{print $1}' | xargs docker rmi
 	-kubectl delete -f ./helm/
 	rm -rf ./bin
-	rm -rf kubebuilder_2.0.0-alpha.1_linux_amd64*
+	rm -rf ./kubebuilder_2.0.0-alpha.1_linux_amd64*
 	rm -rf ./kustomize
 	rm -rf ./cover.out
 

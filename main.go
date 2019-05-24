@@ -63,7 +63,7 @@ func main() {
 	}
 	// +kubebuilder:scaffold:builder
 
-	setupLog.Info("starting manager")
+	setupLog.Info("\n\n**** Starting CCP Istio Operator's controller manager generated using kubebuilder 2.0.0-alpha.1 on k8s 1.14.1 ****\n\n")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
