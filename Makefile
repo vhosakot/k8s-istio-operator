@@ -56,6 +56,8 @@ delete-k8s:
 
 # Build docker image
 docker-build: test
+	# if using minikube for dev, run:
+	#  eval $(minikube docker-env)
 	docker build . -t ${IMG}:${TAG}
 
 # Push docker image

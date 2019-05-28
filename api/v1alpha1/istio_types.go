@@ -22,9 +22,29 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// IstioInitValues defines the istio-init section in Istio CR spec
+type IstioInitValues struct {
+	Chart  string `json:"chart,omitempty"`
+	Values string `json:"values,omitempty"`
+}
+
+// IstioValues defines the istio section in Istio CR spec
+type IstioValues struct {
+	Chart  string `json:"chart,omitempty"`
+	Values string `json:"values,omitempty"`
+}
+
+// IstioRemoteValues defines the istio-remote section in Istio CR spec
+type IstioRemoteValues struct {
+	Chart  string `json:"chart,omitempty"`
+	Values string `json:"values,omitempty"`
+}
+
 // IstioSpec defines the desired state of Istio
 type IstioSpec struct {
-	Foo string `json:"foo"`
+	CcpIstioInit   IstioInitValues   `json:"istio-init,omitempty"`
+	CcpIstio       IstioValues       `json:"istio,omitempty"`
+	CcpIstioRemote IstioRemoteValues `json:"istio-remote,omitempty"`
 }
 
 // IstioStatus defines the observed state of Istio

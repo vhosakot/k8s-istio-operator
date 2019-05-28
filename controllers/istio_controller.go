@@ -49,7 +49,18 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	} else {
 		r.Log.Info("Istio CR created: ", "name", req.NamespacedName)
 		r.Log.Info("Istio CR spec:", "spec", Istio.Spec)
-		r.Log.Info("", "foo", Istio.Spec.Foo)
+
+		// read istio-init section from Istio CR
+		r.Log.Info("istio-init", "chart", Istio.Spec.CcpIstioInit.Chart)
+		r.Log.Info("istio-init", "values", Istio.Spec.CcpIstioInit.Values)
+
+		// read istio section from Istio CR
+		r.Log.Info("istio", "chart", Istio.Spec.CcpIstio.Chart)
+		r.Log.Info("istio", "values", Istio.Spec.CcpIstio.Values)
+
+		// read istio-remote from Istio CR
+		r.Log.Info("istio-remote", "chart", Istio.Spec.CcpIstioRemote.Chart)
+		r.Log.Info("istio-remote", "values", Istio.Spec.CcpIstioRemote.Values)
 	}
 
 	return ctrl.Result{}, nil
