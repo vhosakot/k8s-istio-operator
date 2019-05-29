@@ -1,39 +1,35 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
-  name: ccp-istio-operator-role
+  name: ccp-istio-operator
 rules:
+# cluster-admin role needed for helm to install istio
 - apiGroups:
-  - operator.ccp.cisco.com
+  - '*'
   resources:
-  - istios
+  - '*'
   verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - operator.ccp.cisco.com
-  resources:
-  - istios/status
+  - '*'
+- nonResourceURLs:
+  - '*'
   verbs:
-  - get
-  - update
-  - patch
+  - '*'
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ccp-istio-operator
+  namespace: default
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: ccp-istio-operator-rolebinding
+  name: ccp-istio-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: ccp-istio-operator-role
+  name: ccp-istio-operator
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: ccp-istio-operator
   namespace: default

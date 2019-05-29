@@ -17,7 +17,8 @@ spec:
         control-plane: controller-manager
         controller-tools.k8s.io: "1.0"
     spec:
+      serviceAccountName: ccp-istio-operator
       containers:
       - name: ccp-istio-operator
-        image: ccp-istio-operator:2b22f87
+        image: ccp-istio-operator:1b25edb
         imagePullPolicy: Always
