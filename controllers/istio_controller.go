@@ -16,7 +16,10 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
+	"io/ioutil"
+	"os"
 
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -38,6 +41,15 @@ type IstioReconciler struct {
 // +kubebuilder:rbac:groups=operator.ccp.cisco.com,resources=istios,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operator.ccp.cisco.com,resources=istios/status,verbs=get;update;patch
 
+// Function to join all strings in a slice of strings, helper function for logging
+func JoinStrings(strSlice []string) string {
+	var b bytes.Buffer
+	for _, str := range strSlice {
+		b.WriteString(str)
+	}
+	return b.String()
+}
+
 func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	var Istio operatorv1alpha1.Istio
@@ -45,25 +57,48 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	r.Log.Info("inside Reconcile() function in istio_controller.go")
 
 	if err := r.Get(ctx, req.NamespacedName, &Istio); err != nil {
-		r.Log.Info("Istio CR deleted: ", "name", req.NamespacedName)
+		r.Log.Info(JoinStrings([]string{"Istio CR deleted: ", req.NamespacedName.String()}))
 	} else {
-		r.Log.Info("Istio CR created: ", "name", req.NamespacedName)
+		r.Log.Info(JoinStrings([]string{"Istio CR created: ", req.NamespacedName.String()}))
 		r.Log.Info("Istio CR spec:", "spec", Istio.Spec)
 
 		// read istio-init section from Istio CR
 		r.Log.Info("istio-init", "chart", Istio.Spec.CcpIstioInit.Chart)
 		r.Log.Info("istio-init", "values", Istio.Spec.CcpIstioInit.Values)
+		r.GenerateValuesYamlFromIstioSpec("istio-init", Istio.Spec.CcpIstioInit.Values)
 
 		// read istio section from Istio CR
 		r.Log.Info("istio", "chart", Istio.Spec.CcpIstio.Chart)
 		r.Log.Info("istio", "values", Istio.Spec.CcpIstio.Values)
+		r.GenerateValuesYamlFromIstioSpec("istio", Istio.Spec.CcpIstio.Values)
 
-		// read istio-remote from Istio CR
+		// read istio-remote section from Istio CR
 		r.Log.Info("istio-remote", "chart", Istio.Spec.CcpIstioRemote.Chart)
 		r.Log.Info("istio-remote", "values", Istio.Spec.CcpIstioRemote.Values)
+		r.GenerateValuesYamlFromIstioSpec("istio-remote", Istio.Spec.CcpIstioRemote.Values)
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// Function to generate values file needed to install istio using helm
+func (r *IstioReconciler) GenerateValuesYamlFromIstioSpec(chartName string, values string) {
+	if values == "" {
+		r.Log.Info(JoinStrings([]string{"values not found for ", chartName, " in Istio CR spec."}))
+	} else {
+		f := []byte(values)
+		f = append(f, "\n"...)
+		valuesFileName := JoinStrings([]string{chartName, "-values.yaml"})
+		os.Remove(valuesFileName)
+		err := ioutil.WriteFile(valuesFileName, f, 0644)
+		if err != nil {
+			r.Log.Error(err, JoinStrings([]string{"Failed to generate values file for ",
+				chartName, " in Istio CR spec."}))
+			return
+		}
+		r.Log.Info(JoinStrings([]string{"Generated values file ", valuesFileName, " for ",
+			chartName, " in Istio CR spec."}))
+	}
 }
 
 func (r *IstioReconciler) SetupWithManager(mgr ctrl.Manager) error {
