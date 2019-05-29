@@ -66,9 +66,9 @@ docker-push:
 
 # Delete docker image, ccp-istio-operator on k8s and other binaries
 clean:
-	-docker images --format "{{.ID}} {{.Repository}}" | \
-	  grep '<none>\|ccp-istio-operator\|golang\|gcr.io/distroless/static' | \
-	  awk '{print $1}' | xargs docker rmi
+	-docker images --format "{{.ID}} {{.Repository}} {{.Tag}}" | \
+	  grep '<none>\|ccp-istio-operator\|golang\|debian.*9.9-slim' | \
+	  awk '{print $1}' | xargs docker rmi -f
 	-kubectl delete -f ./helm/
 	rm -rf ./bin
 	rm -rf ./kubebuilder_2.0.0-alpha.1_linux_amd64*

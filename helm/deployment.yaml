@@ -19,5 +19,5 @@ spec:
     spec:
       containers:
       - name: ccp-istio-operator
-        image: ccp-istio-operator:1167ccb
+        image: ccp-istio-operator:2b22f87
         imagePullPolicy: Always
