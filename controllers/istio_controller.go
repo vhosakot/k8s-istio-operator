@@ -55,6 +55,11 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var Istio operatorv1alpha1.Istio
 
 	r.Log.Info("inside Reconcile() function in istio_controller.go")
+	charts_dir := os.Getenv("CHARTS_PATH")
+	r.Log.Info(JoinStrings([]string{"CHARTS_PATH: ", charts_dir}))
+	if len(charts_dir) == 0 {
+		r.Log.Info("environment variable CHARTS_PATH not set")
+	}
 
 	if err := r.Get(ctx, req.NamespacedName, &Istio); err != nil {
 		r.Log.Info(JoinStrings([]string{"Istio CR deleted: ", req.NamespacedName.String()}))

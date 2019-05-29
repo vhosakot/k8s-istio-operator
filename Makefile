@@ -58,22 +58,20 @@ delete-k8s:
 docker-build: test
 	# if using minikube for dev, run:
 	#  eval $(minikube docker-env)
+	#  minikube ssh "sudo mkdir -p /opt/ccp/charts/"
 	docker build . -t ${IMG}:${TAG}
 
 # Push docker image
 docker-push:
 	docker push ${IMG}:${TAG}
 
-# Delete docker image, ccp-istio-operator on k8s and other binaries
-clean:
+# Delete ccp-istio-operator on k8s, docker images and other unwanted files
+clean: delete-k8s
 	-docker images --format "{{.ID}} {{.Repository}} {{.Tag}}" | \
 	  grep '<none>\|ccp-istio-operator\|golang\|debian.*9.9-slim' | \
 	  awk '{print $1}' | xargs docker rmi -f
-	-kubectl delete -f ./helm/
-	rm -rf ./bin
-	rm -rf ./kubebuilder_2.0.0-alpha.1_linux_amd64*
-	rm -rf ./kustomize
-	rm -rf ./cover.out
+	rm -rf bin kubebuilder_2.0.0-alpha.1_linux_amd64* kustomize cover.out \
+	       istio-values.yaml istio-init-values.yaml
 
 ##################################################################################################
 # Code generation make targets, use them only if needed, usually not needed for dev, test and CI #

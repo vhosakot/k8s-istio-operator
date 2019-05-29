@@ -20,5 +20,16 @@ spec:
       serviceAccountName: ccp-istio-operator
       containers:
       - name: ccp-istio-operator
-        image: ccp-istio-operator:1b25edb
+        image: ccp-istio-operator:8b41327
         imagePullPolicy: Always
+        volumeMounts:
+        - name: chart-volume
+          mountPath: /opt/ccp/charts/
+        env:
+          - name: CHARTS_PATH
+            value: /opt/ccp/charts/
+      volumes:
+      - name: chart-volume
+        hostPath:
+          path: /opt/ccp/charts/
+          type: Directory

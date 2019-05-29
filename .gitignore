@@ -27,3 +27,7 @@ bin
 kubebuilder_2.0.0-alpha.1_linux_amd64*
 
 kustomize
+
+# values files needed for helm generated from istio CR spec
+istio-values.yaml
+istio-init-values.yaml
