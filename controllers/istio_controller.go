@@ -18,8 +18,10 @@ package controllers
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -66,27 +68,63 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	} else {
 		r.Log.Info(JoinStrings([]string{"Istio CR created: ", req.NamespacedName.String()}))
 		r.Log.Info("Istio CR spec:", "spec", Istio.Spec)
+		if !r.IstioCRSpecIsValid(Istio) {
+			return ctrl.Result{}, nil
+		}
 
-		// read istio-init section from Istio CR
-		r.Log.Info("istio-init", "chart", Istio.Spec.CcpIstioInit.Chart)
-		r.Log.Info("istio-init", "values", Istio.Spec.CcpIstioInit.Values)
 		r.GenerateValuesYamlFromIstioSpec("istio-init", Istio.Spec.CcpIstioInit.Values)
-
-		// read istio section from Istio CR
-		r.Log.Info("istio", "chart", Istio.Spec.CcpIstio.Chart)
-		r.Log.Info("istio", "values", Istio.Spec.CcpIstio.Values)
 		r.GenerateValuesYamlFromIstioSpec("istio", Istio.Spec.CcpIstio.Values)
-
-		// read istio-remote section from Istio CR
-		r.Log.Info("istio-remote", "chart", Istio.Spec.CcpIstioRemote.Chart)
-		r.Log.Info("istio-remote", "values", Istio.Spec.CcpIstioRemote.Values)
 		r.GenerateValuesYamlFromIstioSpec("istio-remote", Istio.Spec.CcpIstioRemote.Values)
+
+		// install istio-init helm chart which installs istio CRDs
+		// TODO: add pre-install steps for istio-init here before installing istio-init
 	}
 
 	return ctrl.Result{}, nil
 }
 
-// Function to generate values file needed to install istio using helm
+// validate Istio CR spec
+func (r *IstioReconciler) IstioCRSpecIsValid(ist operatorv1alpha1.Istio) bool {
+	// read istio-init section from Istio CR
+	r.Log.Info("istio-init", "chart", ist.Spec.CcpIstioInit.Chart)
+	r.Log.Info("istio-init", "values", ist.Spec.CcpIstioInit.Values)
+	if ist.Spec.CcpIstioInit.Chart == "" {
+		r.Log.Error(errors.New("invalid istio CR spec"),
+			"istio-init helm chart is empty in istio CR spec, cannot install istio-init and istio.")
+		return false
+	}
+	if _, err := os.Stat(ist.Spec.CcpIstioInit.Chart); os.IsNotExist(err) &&
+		!strings.HasPrefix(ist.Spec.CcpIstioInit.Chart, "http") {
+		e := JoinStrings([]string{"istio-init helm chart ", ist.Spec.CcpIstioInit.Chart,
+			" does not exist."})
+		r.Log.Error(errors.New(e), e)
+		return false
+	}
+
+	// read istio section from Istio CR
+	r.Log.Info("istio", "chart", ist.Spec.CcpIstio.Chart)
+	r.Log.Info("istio", "values", ist.Spec.CcpIstio.Values)
+	if ist.Spec.CcpIstio.Chart == "" {
+		r.Log.Error(errors.New("invalid istio CR spec"),
+			"istio helm chart is empty in istio CR spec, cannot install istio.")
+		return false
+	}
+	if _, err := os.Stat(ist.Spec.CcpIstio.Chart); os.IsNotExist(err) &&
+		!strings.HasPrefix(ist.Spec.CcpIstio.Chart, "http") {
+		e := JoinStrings([]string{"istio helm chart ", ist.Spec.CcpIstio.Chart,
+			" does not exist."})
+		r.Log.Error(errors.New(e), e)
+		return false
+	}
+
+	// read istio-remote section from Istio CR
+	r.Log.Info("istio-remote", "chart", ist.Spec.CcpIstioRemote.Chart)
+	r.Log.Info("istio-remote", "values", ist.Spec.CcpIstioRemote.Values)
+
+	return true
+}
+
+// generate values file needed to install istio using helm
 func (r *IstioReconciler) GenerateValuesYamlFromIstioSpec(chartName string, values string) {
 	if values == "" {
 		r.Log.Info(JoinStrings([]string{"values not found for ", chartName, " in Istio CR spec."}))
