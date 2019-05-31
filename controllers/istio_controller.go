@@ -16,9 +16,9 @@ limitations under the License.
 package controllers
 
 import (
-	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -43,30 +43,21 @@ type IstioReconciler struct {
 // +kubebuilder:rbac:groups=operator.ccp.cisco.com,resources=istios,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operator.ccp.cisco.com,resources=istios/status,verbs=get;update;patch
 
-// Function to join all strings in a slice of strings, helper function for logging
-func JoinStrings(strSlice []string) string {
-	var b bytes.Buffer
-	for _, str := range strSlice {
-		b.WriteString(str)
-	}
-	return b.String()
-}
-
 func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	var Istio operatorv1alpha1.Istio
 
 	r.Log.Info("inside Reconcile() function in istio_controller.go")
 	charts_dir := os.Getenv("CHARTS_PATH")
-	r.Log.Info(JoinStrings([]string{"CHARTS_PATH: ", charts_dir}))
+	r.Log.Info(fmt.Sprintf("CHARTS_PATH: %s", charts_dir))
 	if len(charts_dir) == 0 {
 		r.Log.Info("environment variable CHARTS_PATH not set")
 	}
 
 	if err := r.Get(ctx, req.NamespacedName, &Istio); err != nil {
-		r.Log.Info(JoinStrings([]string{"Istio CR deleted: ", req.NamespacedName.String()}))
+		r.Log.Info(fmt.Sprintf("Istio CR deleted: %s", req.NamespacedName.String()))
 	} else {
-		r.Log.Info(JoinStrings([]string{"Istio CR created: ", req.NamespacedName.String()}))
+		r.Log.Info(fmt.Sprintf("Istio CR created: %s", req.NamespacedName.String()))
 		r.Log.Info("Istio CR spec:", "spec", Istio.Spec)
 		if !r.IstioCRSpecIsValid(Istio) {
 			return ctrl.Result{}, nil
@@ -95,8 +86,8 @@ func (r *IstioReconciler) IstioCRSpecIsValid(ist operatorv1alpha1.Istio) bool {
 	}
 	if _, err := os.Stat(ist.Spec.CcpIstioInit.Chart); os.IsNotExist(err) &&
 		!strings.HasPrefix(ist.Spec.CcpIstioInit.Chart, "http") {
-		e := JoinStrings([]string{"istio-init helm chart ", ist.Spec.CcpIstioInit.Chart,
-			" does not exist."})
+		e := fmt.Sprintf("istio-init helm chart %s %s", ist.Spec.CcpIstioInit.Chart,
+			"does not exist.")
 		r.Log.Error(errors.New(e), e)
 		return false
 	}
@@ -111,8 +102,8 @@ func (r *IstioReconciler) IstioCRSpecIsValid(ist operatorv1alpha1.Istio) bool {
 	}
 	if _, err := os.Stat(ist.Spec.CcpIstio.Chart); os.IsNotExist(err) &&
 		!strings.HasPrefix(ist.Spec.CcpIstio.Chart, "http") {
-		e := JoinStrings([]string{"istio helm chart ", ist.Spec.CcpIstio.Chart,
-			" does not exist."})
+		e := fmt.Sprintf("istio helm chart %s %s", ist.Spec.CcpIstio.Chart,
+			"does not exist.")
 		r.Log.Error(errors.New(e), e)
 		return false
 	}
@@ -127,20 +118,20 @@ func (r *IstioReconciler) IstioCRSpecIsValid(ist operatorv1alpha1.Istio) bool {
 // generate values file needed to install istio using helm
 func (r *IstioReconciler) GenerateValuesYamlFromIstioSpec(chartName string, values string) {
 	if values == "" {
-		r.Log.Info(JoinStrings([]string{"values not found for ", chartName, " in Istio CR spec."}))
+		r.Log.Info(fmt.Sprintf("values not found for %s %s", chartName, "in Istio CR spec."))
 	} else {
 		f := []byte(values)
 		f = append(f, "\n"...)
-		valuesFileName := JoinStrings([]string{chartName, "-values.yaml"})
+		valuesFileName := fmt.Sprintf("%s%s", chartName, "-values.yaml")
 		os.Remove(valuesFileName)
 		err := ioutil.WriteFile(valuesFileName, f, 0644)
 		if err != nil {
-			r.Log.Error(err, JoinStrings([]string{"Failed to generate values file for ",
-				chartName, " in Istio CR spec."}))
+			r.Log.Error(err, fmt.Sprintf("Failed to generate values file for %s %s",
+				chartName, "in Istio CR spec."))
 			return
 		}
-		r.Log.Info(JoinStrings([]string{"Generated values file ", valuesFileName, " for ",
-			chartName, " in Istio CR spec."}))
+		r.Log.Info(fmt.Sprintf("Generated values file %s %s %s %s", valuesFileName, "for",
+			chartName, "in Istio CR spec."))
 	}
 }
 
