@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -63,15 +64,65 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, nil
 		}
 
+		// generate values file needed for helm
 		r.GenerateValuesYamlFromIstioSpec("istio-init", Istio.Spec.CcpIstioInit.Values)
 		r.GenerateValuesYamlFromIstioSpec("istio", Istio.Spec.CcpIstio.Values)
 		r.GenerateValuesYamlFromIstioSpec("istio-remote", Istio.Spec.CcpIstioRemote.Values)
 
-		// install istio-init helm chart which installs istio CRDs
-		// TODO: add pre-install steps for istio-init here before installing istio-init
+		// delete istio if it already exists
+		r.Log.Info("deleting istio if it already exists.")
+		if err := r.DeleteIstio(); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// delete istio, istio-init, istio's CRDs and jobs
+func (r *IstioReconciler) DeleteIstio() error {
+	cmd := fmt.Sprintf("helm ls | grep \"%s \"", operatorv1alpha1.IstioHelmChartName)
+	if out, _ := r.RunCommand(cmd); len(out) == 0 {
+		r.Log.Info(fmt.Sprintf("%s helm chart not found.", operatorv1alpha1.IstioHelmChartName))
+	} else {
+		// delete istio helm chart
+		cmd := fmt.Sprintf("helm delete --purge %s", operatorv1alpha1.IstioHelmChartName)
+		if _, err := r.RunCommand(cmd); err != nil {
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				e := fmt.Sprintf("Failed to delete %s helm chart, error: %s, %s",
+					operatorv1alpha1.IstioHelmChartName, string(exitErr.Stderr), err)
+				return errors.New(e)
+			}
+		} else {
+			r.Log.Info(fmt.Sprintf("%s helm chart deleted", operatorv1alpha1.IstioHelmChartName))
+		}
+	}
+
+	cmd = fmt.Sprintf("helm ls | grep \"%s \"", operatorv1alpha1.IstioInitHelmChartName)
+	if out, _ := r.RunCommand(cmd); len(out) == 0 {
+		r.Log.Info(fmt.Sprintf("%s helm chart not found.", operatorv1alpha1.IstioInitHelmChartName))
+	} else {
+		// delete istio-init helm chart
+		cmd := fmt.Sprintf("helm delete --purge %s", operatorv1alpha1.IstioInitHelmChartName)
+		if _, err := r.RunCommand(cmd); err != nil {
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				e := fmt.Sprintf("Failed to delete %s helm chart, error: %s, %s",
+					operatorv1alpha1.IstioInitHelmChartName, string(exitErr.Stderr), err)
+				return errors.New(e)
+			}
+		} else {
+			r.Log.Info(fmt.Sprintf("%s helm chart deleted", operatorv1alpha1.IstioInitHelmChartName))
+		}
+	}
+	return nil
+}
+
+// run linux shell command, return output and error, assumes bash shell
+func (r *IstioReconciler) RunCommand(cmd string) ([]byte, error) {
+	r.Log.Info(fmt.Sprintf("running command: %s", cmd))
+	out, err := exec.Command("bash", "-c", cmd).Output()
+	r.Log.Info(fmt.Sprintf("output: %s", string(out)))
+	return out, err
 }
 
 // validate Istio CR spec

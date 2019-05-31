@@ -22,6 +22,11 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+const (
+	IstioHelmChartName     = "istio"
+	IstioInitHelmChartName = "istio-init"
+)
+
 // IstioInitValues defines the istio-init section in Istio CR spec
 type IstioInitValues struct {
 	Chart  string `json:"chart,omitempty"`
