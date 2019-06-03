@@ -25,6 +25,7 @@ import (
 const (
 	IstioHelmChartName     = "istio"
 	IstioInitHelmChartName = "istio-init"
+	IstioCRDGroupSuffix    = "istio.io"
 )
 
 // IstioInitValues defines the istio-init section in Istio CR spec

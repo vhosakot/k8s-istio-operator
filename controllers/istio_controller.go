@@ -25,6 +25,9 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	apiextclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -127,6 +130,31 @@ func (r *IstioReconciler) DeleteIstio() error {
 			r.Log.Info(fmt.Sprintf("%s helm chart deleted", operatorv1alpha1.IstioInitHelmChartName))
 		}
 	}
+
+	// delete all istio CRDs
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return err
+	}
+	clientset, err := apiextclientset.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+	crdList, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{LabelSelector: ""})
+	if err != nil {
+		return err
+	}
+	for _, crd := range crdList.Items {
+		if strings.Contains(crd.Spec.Group, operatorv1alpha1.IstioCRDGroupSuffix) {
+			istioCRName := fmt.Sprintf("%s.%s", crd.Spec.Names.Plural, crd.Spec.Group)
+			if err = clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(istioCRName, nil); err != nil {
+				return err
+			} else {
+				r.Log.Info(fmt.Sprintf("istio CR %s deleted", istioCRName))
+			}
+		}
+	}
+
 	return nil
 }
 
