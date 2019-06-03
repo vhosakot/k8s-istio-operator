@@ -60,6 +60,8 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	} else {
 		r.Log.Info(fmt.Sprintf("Istio CR created: %s", req.NamespacedName.String()))
 		r.Log.Info("Istio CR spec:", "spec", Istio.Spec)
+
+		// validate istio CR spec
 		if !r.IstioCRSpecIsValid(Istio) {
 			return ctrl.Result{}, nil
 		}
@@ -72,11 +74,22 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// delete istio if it already exists
 		r.Log.Info("deleting istio if it already exists.")
 		if err := r.DeleteIstio(); err != nil {
+			r.UpdateIstioCR(ctx, &Istio, err.Error())
 			return ctrl.Result{}, err
 		}
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// update istio CR spec
+func (r *IstioReconciler) UpdateIstioCR(ctx context.Context, ist *operatorv1alpha1.Istio, status string) {
+	ist.Status.Active = status
+	r.Log.Info(fmt.Sprintf("Istio CR status: %s", ist.Status.Active))
+	if err := r.Update(ctx, ist); err != nil {
+		r.Log.Error(err,
+			fmt.Sprintf("unable to update Istio CR's status to \"%s\".", status))
+	}
 }
 
 // delete istio, istio-init, istio's CRDs and jobs

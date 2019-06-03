@@ -77,15 +77,19 @@ clean: delete-k8s
 # Code generation make targets, use them only if needed, usually not needed for dev, test and CI #
 ##################################################################################################
 
+# Build manager binary
+manager: generate fmt vet
+	go build -o bin/manager main.go
+
 # Generate manifests e.g. CRD, RBAC etc.
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 manifests: controller-gen
-        $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./api/...;./controllers/..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./api/...;./controllers/..." output:crd:artifacts:config=config/crd/bases
 
 # Generate code
 generate: controller-gen
-        $(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths=./api/...
+	$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths=./api/...
 
 # find or download controller-gen
 # download controller-gen if necessary

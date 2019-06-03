@@ -47,6 +47,9 @@ type IstioRemoteValues struct {
 
 // IstioSpec defines the desired state of Istio
 type IstioSpec struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+
 	CcpIstioInit   IstioInitValues   `json:"istio-init,omitempty"`
 	CcpIstio       IstioValues       `json:"istio,omitempty"`
 	CcpIstioRemote IstioRemoteValues `json:"istio-remote,omitempty"`
@@ -56,6 +59,8 @@ type IstioSpec struct {
 type IstioStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	Active string `json:"active,omitempty"`
 }
 
 // +kubebuilder:object:root=true

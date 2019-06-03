@@ -1,0 +1,3 @@
+version: "2"
+domain: ccp.cisco.com
+repo: wwwin-github.cisco.com:CPSG/ccp-istio-operator.git
