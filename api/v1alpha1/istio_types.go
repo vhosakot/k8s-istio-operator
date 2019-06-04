@@ -25,6 +25,7 @@ import (
 const (
 	IstioHelmChartName     = "istio"
 	IstioInitHelmChartName = "istio-init"
+	IstioNamespace         = "istio-system"
 	IstioCRDGroupSuffix    = "istio.io"
 )
 

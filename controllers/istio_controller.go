@@ -27,6 +27,7 @@ import (
 	"github.com/go-logr/logr"
 	apiextclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,7 +78,6 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// delete istio if it already exists
 		r.Log.Info("deleting istio if it already exists.")
 		if err := r.DeleteIstio(); err != nil {
-			r.UpdateIstioCR(ctx, &Istio, err.Error())
 			return ctrl.Result{}, err
 		}
 	}
@@ -85,7 +85,8 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// update istio CR spec
+// update istio CR spec's status - can be seen in the output of
+//     kubectl get Istio <name of istio CR> -o=jsonpath='{.status.active}'
 func (r *IstioReconciler) UpdateIstioCR(ctx context.Context, ist *operatorv1alpha1.Istio, status string) {
 	ist.Status.Active = status
 	r.Log.Info(fmt.Sprintf("Istio CR status: %s", ist.Status.Active))
@@ -136,23 +137,38 @@ func (r *IstioReconciler) DeleteIstio() error {
 	if err != nil {
 		return err
 	}
-	clientset, err := apiextclientset.NewForConfig(config)
+	extclientset, err := apiextclientset.NewForConfig(config)
 	if err != nil {
 		return err
 	}
-	crdList, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{LabelSelector: ""})
+	crdList, err := extclientset.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	for _, crd := range crdList.Items {
-		if strings.Contains(crd.Spec.Group, operatorv1alpha1.IstioCRDGroupSuffix) {
-			istioCRName := fmt.Sprintf("%s.%s", crd.Spec.Names.Plural, crd.Spec.Group)
-			if err = clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(istioCRName, nil); err != nil {
+		if strings.Contains(crd.ObjectMeta.Name, operatorv1alpha1.IstioCRDGroupSuffix) {
+			if err = extclientset.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(crd.ObjectMeta.Name, nil); err != nil {
 				return err
 			} else {
-				r.Log.Info(fmt.Sprintf("istio CR %s deleted", istioCRName))
+				r.Log.Info(fmt.Sprintf("istio CRD %s deleted", crd.ObjectMeta.Name))
 			}
 		}
+	}
+
+	// delete all istio jobs
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+	jobList, err := clientset.BatchV1().Jobs(operatorv1alpha1.IstioNamespace).List(v1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, job := range jobList.Items {
+		if err = clientset.BatchV1().Jobs(operatorv1alpha1.IstioNamespace).Delete(job.ObjectMeta.Name, nil); err != nil {
+			return err
+		}
+		r.Log.Info(fmt.Sprintf("istio job %s deleted", job.ObjectMeta.Name))
 	}
 
 	return nil
