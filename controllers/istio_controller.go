@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	apiextclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -61,6 +62,12 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	if err := r.Get(ctx, req.NamespacedName, &Istio); err != nil {
 		r.Log.Info(fmt.Sprintf("Istio CR deleted: %s", req.NamespacedName.String()))
+		// delete istio
+		r.Log.Info("deleting istio")
+		if err := r.DeleteIstio(); err != nil {
+			return ctrl.Result{}, err
+		}
+
 	} else {
 		r.Log.Info(fmt.Sprintf("Istio CR created: %s", req.NamespacedName.String()))
 		r.Log.Info("Istio CR spec:", "spec", Istio.Spec)
@@ -80,6 +87,15 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if err := r.DeleteIstio(); err != nil {
 			return ctrl.Result{}, err
 		}
+
+		// TODO: Add post-delete steps here to check if all the istio pods, CRDs and jobs are deleted
+		//       before installing istio
+
+		// install istio
+		r.Log.Info("installing istio")
+		if err := r.InstallIstio(Istio.Spec); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
@@ -94,6 +110,54 @@ func (r *IstioReconciler) UpdateIstioCR(ctx context.Context, ist *operatorv1alph
 		r.Log.Error(err,
 			fmt.Sprintf("unable to update Istio CR's status to \"%s\".", status))
 	}
+}
+
+// install istio-init and istio
+func (r *IstioReconciler) InstallIstio(istSpec operatorv1alpha1.IstioSpec) error {
+	cmd := ""
+	// install istio-init
+	if istSpec.CcpIstioInit.Values == "" {
+		cmd = fmt.Sprintf("helm install %s %s %s %s %s", istSpec.CcpIstioInit.Chart,
+			" --name ", operatorv1alpha1.IstioInitHelmChartName, " --namespace ",
+			operatorv1alpha1.IstioNamespace)
+	} else {
+		cmd = fmt.Sprintf("helm install %s %s %s %s %s %s", istSpec.CcpIstioInit.Chart, " -f istio-init-values.yaml",
+			" --name ", operatorv1alpha1.IstioInitHelmChartName, " --namespace ",
+			operatorv1alpha1.IstioNamespace)
+	}
+	if _, err := r.RunCommand(cmd); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			e := fmt.Sprintf("Failed to install %s helm chart, error: %s, %s",
+				operatorv1alpha1.IstioInitHelmChartName, string(exitErr.Stderr), err)
+			return errors.New(e)
+		}
+	} else {
+		r.Log.Info(fmt.Sprintf("%s helm chart installed", operatorv1alpha1.IstioInitHelmChartName))
+	}
+
+	// TODO: Check here if all the istio CRD jobs are completed before installing istio
+	time.Sleep(60 * time.Second)
+
+	// install istio
+	if istSpec.CcpIstioInit.Values == "" {
+		cmd = fmt.Sprintf("helm install %s %s %s %s %s", istSpec.CcpIstio.Chart,
+			" --name ", operatorv1alpha1.IstioHelmChartName, " --namespace ",
+			operatorv1alpha1.IstioNamespace)
+	} else {
+		cmd = fmt.Sprintf("helm install %s %s %s %s %s %s", istSpec.CcpIstio.Chart, " -f istio-values.yaml",
+			" --name ", operatorv1alpha1.IstioHelmChartName, " --namespace ",
+			operatorv1alpha1.IstioNamespace)
+	}
+	if _, err := r.RunCommand(cmd); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			e := fmt.Sprintf("Failed to install %s helm chart, error: %s, %s",
+				operatorv1alpha1.IstioHelmChartName, string(exitErr.Stderr), err)
+			return errors.New(e)
+		}
+	} else {
+		r.Log.Info(fmt.Sprintf("%s helm chart installed", operatorv1alpha1.IstioHelmChartName))
+	}
+	return nil
 }
 
 // delete istio, istio-init, istio's CRDs and jobs
@@ -135,20 +199,20 @@ func (r *IstioReconciler) DeleteIstio() error {
 	// delete all istio CRDs
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("%s, %s", "failed to delete istio CRDs", err.Error()))
 	}
 	extclientset, err := apiextclientset.NewForConfig(config)
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("%s, %s", "failed to delete istio CRDs", err.Error()))
 	}
 	crdList, err := extclientset.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{})
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("%s, %s", "failed to delete istio CRDs", err.Error()))
 	}
 	for _, crd := range crdList.Items {
 		if strings.Contains(crd.ObjectMeta.Name, operatorv1alpha1.IstioCRDGroupSuffix) {
 			if err = extclientset.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(crd.ObjectMeta.Name, nil); err != nil {
-				return err
+				return errors.New(fmt.Sprintf("%s, %s", "failed to delete istio CRDs", err.Error()))
 			} else {
 				r.Log.Info(fmt.Sprintf("istio CRD %s deleted", crd.ObjectMeta.Name))
 			}
@@ -158,15 +222,15 @@ func (r *IstioReconciler) DeleteIstio() error {
 	// delete all istio jobs
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("%s, %s", "failed to delete istio jobs", err.Error()))
 	}
 	jobList, err := clientset.BatchV1().Jobs(operatorv1alpha1.IstioNamespace).List(v1.ListOptions{})
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("%s, %s", "failed to delete istio jobs", err.Error()))
 	}
 	for _, job := range jobList.Items {
 		if err = clientset.BatchV1().Jobs(operatorv1alpha1.IstioNamespace).Delete(job.ObjectMeta.Name, nil); err != nil {
-			return err
+			return errors.New(fmt.Sprintf("%s, %s", "failed to delete istio jobs", err.Error()))
 		}
 		r.Log.Info(fmt.Sprintf("istio job %s deleted", job.ObjectMeta.Name))
 	}
