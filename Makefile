@@ -21,13 +21,13 @@ test: fmt vet
 build-binary: fmt vet
 	go build -o bin/manager main.go
 	# to run the binary do:
-	  # kubectl apply -f helm/crd.yaml
+	  # kubectl apply -f helm/templates/crd.yaml
 	  # ./bin/manager
 
 # Run ccp-istio-operator go binary against the configured Kubernetes cluster in ~/.kube/config
 run-binary: fmt vet
 	# create ccp-istio-operator CRD
-	kubectl apply -f helm/crd.yaml
+	kubectl apply -f helm/templates/crd.yaml
 	go run main.go
 	# deploy istio CR by doing "kubectl apply -f ccp-istio-cr.yaml"
 
@@ -41,18 +41,17 @@ vet:
 
 # Deploy ccp-istio-operator on k8s
 deploy-k8s:
-	# use locally built docker image in helm/deployment.yaml
-	sed -i'' -e 's@image: .*@image: '"${IMG}:${TAG}"'@' helm/deployment.yaml
-	# update imagePullPolicy to "Never" in helm/deployment.yaml to
+	# use locally built docker image in helm/templates/deployment.yaml
+	sed -i'' -e 's@image: .*@image: '"${IMG}:${TAG}"'@' helm/templates/deployment.yaml
+	# update imagePullPolicy to "Never" in helm/templates/deployment.yaml to
 	# pull locally built docker image into k8s pod
-	sed -i'' -e 's@imagePullPolicy: .*@imagePullPolicy: 'Never'@' helm/deployment.yaml
-	kubectl apply -f ./helm/
-	kubectl get all --all-namespaces | grep ccp-istio-operator
-	kubectl get crd | grep istios.operator.ccp.cisco.com
+	sed -i'' -e 's@imagePullPolicy: .*@imagePullPolicy: 'Never'@' helm/templates/deployment.yaml
+	helm install ./helm/ --name ccp-istio-operator
 
 # Delete ccp-istio-operator on k8s
 delete-k8s:
-	-kubectl delete -f ./helm/
+	-helm delete --purge ccp-istio-operator
+	-kubectl delete crd istios.operator.ccp.cisco.com
 
 # Build docker image
 docker-build: test
@@ -80,6 +79,9 @@ clean: delete-k8s
 # in config directory.                                               #
 #                                                                    #
 # Istio operator's CRD will be generated at                          #
+# config/crd/bases/operator.ccp.cisco.com_istios.yaml                #
+#                                                                    #
+# Istio operator's CRD helm/templates/crd.yaml is a copy of          #
 # config/crd/bases/operator.ccp.cisco.com_istios.yaml                #
 ######################################################################
 

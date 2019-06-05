@@ -20,8 +20,8 @@ spec:
       serviceAccountName: ccp-istio-operator
       containers:
       - name: ccp-istio-operator
-        image: ccp-istio-operator:d08520e
-        imagePullPolicy: Always
+        image: ccp-istio-operator:523f36f
+        imagePullPolicy: Never
         volumeMounts:
         - name: chart-volume
           mountPath: /opt/ccp/charts/
