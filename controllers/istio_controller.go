@@ -48,7 +48,6 @@ type IstioReconciler struct {
 
 // +kubebuilder:rbac:groups=operator.ccp.cisco.com,resources=istios,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operator.ccp.cisco.com,resources=istios/status,verbs=get;update;patch
-
 func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	var Istio operatorv1alpha1.Istio
@@ -67,7 +66,6 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if err := r.DeleteIstio(); err != nil {
 			return ctrl.Result{}, err
 		}
-
 	} else {
 		r.Log.Info(fmt.Sprintf("Istio CR created: %s", req.NamespacedName.String()))
 		r.Log.Info("Istio CR spec:", "spec", Istio.Spec)
@@ -96,20 +94,11 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if err := r.InstallIstio(Istio.Spec); err != nil {
 			return ctrl.Result{}, err
 		}
+		Istio.Status.Active = "Istio install completed"
+		r.Log.Info(fmt.Sprintf("Istio CR status: %s", Istio.Status.Active))
+		// r.Status().Update(ctx, &Istio)
 	}
-
 	return ctrl.Result{}, nil
-}
-
-// update istio CR spec's status - can be seen in the output of
-//     kubectl get Istio <name of istio CR> -o=jsonpath='{.status.active}'
-func (r *IstioReconciler) UpdateIstioCR(ctx context.Context, ist *operatorv1alpha1.Istio, status string) {
-	ist.Status.Active = status
-	r.Log.Info(fmt.Sprintf("Istio CR status: %s", ist.Status.Active))
-	if err := r.Update(ctx, ist); err != nil {
-		r.Log.Error(err,
-			fmt.Sprintf("unable to update Istio CR's status to \"%s\".", status))
-	}
 }
 
 // install istio-init and istio

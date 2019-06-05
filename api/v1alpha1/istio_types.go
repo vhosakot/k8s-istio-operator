@@ -66,7 +66,8 @@ type IstioStatus struct {
 }
 
 // +kubebuilder:object:root=true
-
+// +k8s:openapi-gen=true
+// +kubebuilder:subresource:status
 // Istio is the Schema for the istios API
 type Istio struct {
 	metav1.TypeMeta   `json:",inline"`

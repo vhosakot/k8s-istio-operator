@@ -73,9 +73,15 @@ clean: delete-k8s
 	rm -rf bin kubebuilder_2.0.0-alpha.1_linux_amd64* kustomize cover.out \
 	       istio-values.yaml istio-init-values.yaml
 
-##################################################################################################
-# Code generation make targets, use them only if needed, usually not needed for dev, test and CI #
-##################################################################################################
+######################################################################
+# Kubebuilder's code generation make targets.                        #
+#                                                                    #
+# Run "make" and "make manifests" to generate code and k8s manifests #
+# in config directory.                                               #
+#                                                                    #
+# Istio operator's CRD will be generated at                          #
+# config/crd/bases/operator.ccp.cisco.com_istios.yaml                #
+######################################################################
 
 # Build manager binary
 manager: generate fmt vet
