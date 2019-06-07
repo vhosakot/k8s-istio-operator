@@ -6,6 +6,16 @@ metadata:
   creationTimestamp: null
   name: istios.operator.ccp.cisco.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .metadata.creationTimestamp
+    name: AGE
+    type: date
+  - JSONPath: .status.active
+    name: status
+    type: string
+  - JSONPath: .status.version
+    name: version
+    type: string
   group: operator.ccp.cisco.com
   names:
     kind: Istio
@@ -422,6 +432,9 @@ spec:
                 istio operator
               format: int64
               type: integer
+            version:
+              description: version of istio installed
+              type: string
           type: object
       type: object
   versions:

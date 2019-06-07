@@ -55,6 +55,8 @@ delete-k8s:
 
 # Build docker image
 docker-build: test
+	make clean
+	make clean
 	# if using minikube for dev, run:
 	#  eval $(minikube docker-env)
 	#  minikube ssh "sudo mkdir -p /opt/ccp/charts/"
@@ -94,6 +96,7 @@ manager: generate fmt vet
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./api/...;./controllers/..." output:crd:artifacts:config=config/crd/bases
+	cp config/crd/bases/operator.ccp.cisco.com_istios.yaml helm/templates/crd.yaml
 
 # Generate code
 generate: controller-gen

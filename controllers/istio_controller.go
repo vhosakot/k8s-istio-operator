@@ -83,7 +83,10 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			r.Log.Info(fmt.Sprintf("  status.observedGeneration = %s",
 				strconv.FormatInt(Istio.Status.ObservedGeneration, 10)))
 
+			// update ObservedGeneration and Version in CR status
 			Istio.Status.ObservedGeneration = Istio.ObjectMeta.Generation
+			istioVersion := strings.Split(Istio.Spec.CcpIstio.Chart, "/")
+			Istio.Status.Version = istioVersion[len(istioVersion)-1]
 			r.Status().Update(ctx, &Istio)
 
 			r.Log.Info("Istio CR spec: ", "spec", Istio.Spec)
@@ -140,7 +143,7 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-// update istio CR status
+// update istio CR's status.active field
 func (r *IstioReconciler) UpdateIstioCRStatus(ctx context.Context, ist *operatorv1alpha1.Istio, status string) {
 	ist.Status.Active = status
 

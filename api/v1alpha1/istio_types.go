@@ -70,10 +70,16 @@ type IstioStatus struct {
 
 	// last time istio's status was updated
 	LastUpdateTime string `json:"lastUpdateTime,omitempty"`
+
+	// version of istio installed
+	Version string `json:"version,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +k8s:openapi-gen=true
+// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="status",type="string",JSONPath=".status.active"
+// +kubebuilder:printcolumn:name="version",type="string",JSONPath=".status.version"
 // +kubebuilder:subresource:status
 // Istio is the Schema for the istios API
 type Istio struct {
