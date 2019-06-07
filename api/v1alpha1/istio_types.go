@@ -62,7 +62,14 @@ type IstioStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// status of istio
 	Active string `json:"active,omitempty"`
+
+	// generation (metadata.generation in istio CR) observed by istio operator
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	// last time istio's status was updated
+	LastUpdateTime string `json:"lastUpdateTime,omitempty"`
 }
 
 // +kubebuilder:object:root=true

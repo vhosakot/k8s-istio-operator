@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -67,38 +68,90 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, err
 		}
 	} else {
-		r.Log.Info(fmt.Sprintf("Istio CR created: %s", req.NamespacedName.String()))
-		r.Log.Info("Istio CR spec:", "spec", Istio.Spec)
+		if Istio.Status.ObservedGeneration != Istio.ObjectMeta.Generation {
+			// this if branch is hit when metadata.generation in istio CR is incremented
+			if Istio.Status.ObservedGeneration == 0 && Istio.ObjectMeta.Generation == 1 {
+				r.Log.Info(fmt.Sprintf("New Istio CR created: %s", req.NamespacedName.String()))
+			} else {
+				// CR is updated using:
+				// "kubectl edit istio <name of istio CR>" or
+				// "kubectl apply -f <updated CR manifest file>
+				r.Log.Info(fmt.Sprintf("Istio CR updated: %s", req.NamespacedName.String()))
+			}
+			r.Log.Info(fmt.Sprintf("  metadata.generation = %s",
+				strconv.FormatInt(Istio.ObjectMeta.Generation, 10)))
+			r.Log.Info(fmt.Sprintf("  status.observedGeneration = %s",
+				strconv.FormatInt(Istio.Status.ObservedGeneration, 10)))
 
-		// validate istio CR spec
-		if !r.IstioCRSpecIsValid(Istio) {
-			return ctrl.Result{}, nil
+			Istio.Status.ObservedGeneration = Istio.ObjectMeta.Generation
+			r.Status().Update(ctx, &Istio)
+
+			r.Log.Info("Istio CR spec: ", "spec", Istio.Spec)
+
+			// validate istio CR spec
+			if !r.IstioCRSpecIsValid(Istio) {
+				r.UpdateIstioCRStatus(ctx, &Istio, "InvalidIstioCRSpec")
+				return ctrl.Result{}, nil
+			}
+
+			// generate values file needed for helm
+			r.UpdateIstioCRStatus(ctx, &Istio, "GeneratingHelmValuesFile")
+			r.GenerateValuesYamlFromIstioSpec("istio-init", Istio.Spec.CcpIstioInit.Values)
+			r.GenerateValuesYamlFromIstioSpec("istio", Istio.Spec.CcpIstio.Values)
+			r.GenerateValuesYamlFromIstioSpec("istio-remote", Istio.Spec.CcpIstioRemote.Values)
+
+			// delete istio if it already exists
+			r.UpdateIstioCRStatus(ctx, &Istio, "CleaningIstioPreinstall")
+			r.Log.Info("deleting istio if it already exists.")
+			if err := r.DeleteIstio(); err != nil {
+				r.UpdateIstioCRStatus(ctx, &Istio, "PreinstallCleanupFailed")
+				return ctrl.Result{}, err
+			}
+
+			// TODO: Instead of sleeping below, add post-delete steps here to check if
+			// all the istio pods, CRDs and jobs are deleted before installing istio
+			time.Sleep(10 * time.Second)
+
+			// install istio
+			r.Log.Info("installing istio")
+			r.UpdateIstioCRStatus(ctx, &Istio, "InstallingIstio")
+			if err := r.InstallIstio(Istio.Spec); err != nil {
+				r.UpdateIstioCRStatus(ctx, &Istio, "InstallationFailed")
+				return ctrl.Result{}, err
+			}
+
+			// TODO: Add post-install steps to check if all the istio pods are in Running state
+
+			r.UpdateIstioCRStatus(ctx, &Istio, "IstioInstalledActive")
+		} else {
+			// this else branch is hit when metadata.generation in istio CR is not incremented (when
+			// istio CR's status is updated)
+			//
+			// no need to reconcile istio when istio CR's status is updated,
+			// istio needs to be reconciled only when the CR's spec is updated and
+			// NOT when the CR's status is updated (when r.Status().Update(ctx, ist) is done in UpdateIstioCRStatus())
+			//
+			// https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/ says:
+			//
+			//  The .metadata.generation value is incremented for all changes, except for changes to .metadata or .status.
+			r.Log.Info("Istio CR status: ", "status", Istio.Status)
 		}
-
-		// generate values file needed for helm
-		r.GenerateValuesYamlFromIstioSpec("istio-init", Istio.Spec.CcpIstioInit.Values)
-		r.GenerateValuesYamlFromIstioSpec("istio", Istio.Spec.CcpIstio.Values)
-		r.GenerateValuesYamlFromIstioSpec("istio-remote", Istio.Spec.CcpIstioRemote.Values)
-
-		// delete istio if it already exists
-		r.Log.Info("deleting istio if it already exists.")
-		if err := r.DeleteIstio(); err != nil {
-			return ctrl.Result{}, err
-		}
-
-		// TODO: Add post-delete steps here to check if all the istio pods, CRDs and jobs are deleted
-		//       before installing istio
-
-		// install istio
-		r.Log.Info("installing istio")
-		if err := r.InstallIstio(Istio.Spec); err != nil {
-			return ctrl.Result{}, err
-		}
-		Istio.Status.Active = "Istio install completed"
-		r.Log.Info(fmt.Sprintf("Istio CR status: %s", Istio.Status.Active))
-		// r.Status().Update(ctx, &Istio)
 	}
 	return ctrl.Result{}, nil
+}
+
+// update istio CR status
+func (r *IstioReconciler) UpdateIstioCRStatus(ctx context.Context, ist *operatorv1alpha1.Istio, status string) {
+	ist.Status.Active = status
+
+	// updating istio CR's status below (r.Status().Update(ctx, ist)) does not
+	// increment metadata.generation in istio CR
+	if err := r.Status().Update(ctx, ist); err != nil {
+		r.Log.Error(err, fmt.Sprintf("unable to update Istio CR status to \"%s\".", status))
+		return
+	} else {
+		r.Log.Info(fmt.Sprintf("Istio CR status updated to: %s", ist.Status.Active))
+	}
 }
 
 // install istio-init and istio
@@ -124,7 +177,7 @@ func (r *IstioReconciler) InstallIstio(istSpec operatorv1alpha1.IstioSpec) error
 		r.Log.Info(fmt.Sprintf("%s helm chart installed", operatorv1alpha1.IstioInitHelmChartName))
 	}
 
-	// TODO: Check here if all the istio CRD jobs are completed before installing istio
+	// TODO: Instead of sleeping below, check here if all the istio CRD jobs are completed before installing istio
 	time.Sleep(60 * time.Second)
 
 	// install istio

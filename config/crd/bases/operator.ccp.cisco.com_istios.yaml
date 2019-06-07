@@ -412,7 +412,16 @@ spec:
         status:
           properties:
             active:
+              description: status of istio
               type: string
+            lastUpdateTime:
+              description: last time istio's status was updated
+              type: string
+            observedGeneration:
+              description: generation (metadata.generation in istio CR) observed by
+                istio operator
+              format: int64
+              type: integer
           type: object
       type: object
   versions:
