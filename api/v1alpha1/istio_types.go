@@ -27,6 +27,8 @@ const (
 	IstioInitHelmChartName = "istio-init"
 	IstioNamespace         = "istio-system"
 	IstioCRDGroupSuffix    = "istio.io"
+	// timeout interval in seconds for polling checks
+	TimeoutInternal = 600
 )
 
 // IstioInitValues defines the istio-init section in Istio CR spec

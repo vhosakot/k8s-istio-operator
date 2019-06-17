@@ -20,7 +20,7 @@ spec:
       serviceAccountName: ccp-istio-operator
       containers:
       - name: ccp-istio-operator
-        image: ccp-istio-operator:ee28ef8
+        image: ccp-istio-operator:d95c870
         imagePullPolicy: Always
         volumeMounts:
         - name: chart-volume

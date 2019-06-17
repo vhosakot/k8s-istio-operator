@@ -123,9 +123,13 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				return ctrl.Result{}, err
 			}
 
-			// TODO: Add post-install steps to check if all the istio pods are in Running state
-
-			r.UpdateIstioCRStatus(ctx, &Istio, "IstioInstalledActive")
+			r.UpdateIstioCRStatus(ctx, &Istio, "PostInstallChecks")
+			if err := r.DoPostInstallChecks(); err != nil {
+				r.UpdateIstioCRStatus(ctx, &Istio, "PostInstallChecksFailed")
+				r.Log.Error(err, "PostInstallChecksFailed")
+			} else {
+				r.UpdateIstioCRStatus(ctx, &Istio, "IstioInstalledActive")
+			}
 		} else {
 			// this else branch is hit when metadata.generation in istio CR is not incremented (when
 			// istio CR's status is updated)
@@ -141,6 +145,61 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+// check post install if all istio pods have reached Running and Ready state or Completed state
+func (r *IstioReconciler) DoPostInstallChecks() error {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return errors.New(fmt.Sprintf("%s, %s", "post-install check failed", err.Error()))
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return errors.New(fmt.Sprintf("%s, %s", "post-install check failed", err.Error()))
+	}
+
+	for i := 1; i <= operatorv1alpha1.TimeoutInternal/5; i++ {
+		time.Sleep(5 * time.Second)
+		allIstioPodsAreGood := true
+		podList, err := clientset.CoreV1().Pods(operatorv1alpha1.IstioNamespace).List(v1.ListOptions{})
+		if err != nil {
+			return errors.New(fmt.Sprintf("%s, %s", "post-install check failed", err.Error()))
+		}
+
+		for _, pod := range podList.Items {
+			for _, containerStatus := range pod.Status.ContainerStatuses {
+				// check if pod has reached Running and Ready state
+				if containerStatus.State.Running != nil && containerStatus.Ready {
+					continue
+					// check if job's pod completed successfully
+				} else if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.Reason == "Completed" {
+					continue
+				} else {
+					r.Log.Info(fmt.Sprintf("%s container in %s pod did not "+
+						"reach Ready or Completed state, "+
+						"will check again after 5 seconds...",
+						containerStatus.Name, pod.ObjectMeta.Name))
+					allIstioPodsAreGood = false
+					continue
+				}
+			}
+			if pod.Status.Phase != "Running" && pod.Status.Phase != "Succeeded" {
+				r.Log.Info(fmt.Sprintf("%s pod did not reach Running or Succeeded phase, "+
+					"will check again after 5 seconds...", pod.ObjectMeta.Name))
+				allIstioPodsAreGood = false
+				continue
+			}
+		}
+		if i == operatorv1alpha1.TimeoutInternal/5 {
+			return errors.New(fmt.Sprintf("post-install checks timed out after %s seconds and failed, "+
+				"istio pod(s) did not reach Running and Ready state or Completed state",
+				strconv.FormatInt(operatorv1alpha1.TimeoutInternal, 10)))
+		} else if allIstioPodsAreGood {
+			return nil
+		}
+	}
+	return nil
 }
 
 // update istio CR's status.active field
@@ -180,8 +239,9 @@ func (r *IstioReconciler) InstallIstio(istSpec operatorv1alpha1.IstioSpec) error
 		r.Log.Info(fmt.Sprintf("%s helm chart installed", operatorv1alpha1.IstioInitHelmChartName))
 	}
 
-	// TODO: Instead of sleeping below, check here if all the istio CRD jobs are completed before installing istio
-	time.Sleep(60 * time.Second)
+	if err := r.DoPostInstallChecks(); err != nil {
+		return err
+	}
 
 	// install istio
 	if istSpec.CcpIstioInit.Values == "" {
