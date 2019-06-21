@@ -41,12 +41,10 @@ vet:
 
 # Deploy ccp-istio-operator on k8s
 deploy-k8s:
-	# use locally built docker image in helm/templates/deployment.yaml
-	sed -i'' -e 's@image: .*@image: '"${IMG}:${TAG}"'@' helm/templates/deployment.yaml
-	# update imagePullPolicy to "Never" in helm/templates/deployment.yaml to
-	# pull locally built docker image into k8s pod
-	sed -i'' -e 's@imagePullPolicy: .*@imagePullPolicy: 'Never'@' helm/templates/deployment.yaml
-	helm install ./helm/ --name ccp-istio-operator
+	# set image.pullPolicy to "Never" to pull locally built docker image into k8s pod
+	helm install ./helm/ --name ccp-istio-operator \
+	  --set image.tag=${TAG} \
+	  --set image.pullPolicy=Never
 
 # Delete ccp-istio-operator on k8s
 delete-k8s:

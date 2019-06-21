@@ -1,1 +1,12 @@
 # Default values for ccp-istio-operator used by helm
+
+image:
+  repo: ccp-istio-operator
+  tag: d95c870
+  pullPolicy: Always
+
+namespace: default
+
+# directory containing istio tgz helm charts on the master node,
+# this path will be mounted inside the container
+chartsPath: /opt/ccp/charts/
