@@ -52,6 +52,7 @@ type IstioReconciler struct {
 func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	var Istio operatorv1alpha1.Istio
+	var IstioList operatorv1alpha1.IstioList
 
 	r.Log.Info("inside Reconcile() function in istio_controller.go")
 	charts_dir := os.Getenv("CHARTS_PATH")
@@ -60,12 +61,30 @@ func (r *IstioReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		r.Log.Info("environment variable CHARTS_PATH not set")
 	}
 
+	if err := r.List(ctx, &IstioList, client.InNamespace(req.NamespacedName.Namespace)); err != nil {
+		r.Log.Error(err, fmt.Sprintf("Failed to get list of istio CRs in %s namespace", req.NamespacedName.Namespace))
+		return ctrl.Result{}, err
+	}
+	if len(IstioList.Items) > 1 {
+		// allow only one istio CR
+		r.Log.Info(fmt.Sprintf("More than one istio CR created, only one istio CR allowed as only one instance "+
+			"of istio can be installed on kubernetes. Multiple instances of istio cannot be installed "+
+			"on kubernetes. Use only the first istio CR %s to manage istio and delete all the other "+
+			"istio CRs:", IstioList.Items[0].ObjectMeta.Name))
+		for _, istio := range IstioList.Items {
+			r.Log.Info(fmt.Sprintf("  %s", istio.ObjectMeta.Name))
+		}
+		return ctrl.Result{}, nil
+	}
+
 	if err := r.Get(ctx, req.NamespacedName, &Istio); err != nil {
 		r.Log.Info(fmt.Sprintf("Istio CR deleted: %s", req.NamespacedName.String()))
-		// delete istio
-		r.Log.Info("deleting istio")
-		if err := r.DeleteIstio(); err != nil {
-			return ctrl.Result{}, err
+		if len(IstioList.Items) == 0 {
+			// delete istio
+			r.Log.Info("deleting istio")
+			if err := r.DeleteIstio(); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	} else {
 		if Istio.Status.ObservedGeneration != Istio.ObjectMeta.Generation {
