@@ -1,13 +1,24 @@
 IMG ?= ccp-istio-operator
 TAG ?= $(shell git describe --always --abbrev=7 2>/dev/null || echo devbuild)
+OS := $(shell uname)
 
 all: manager
 
 # Run tests
 test: fmt vet
-	# download and install kubebuilder on the host to get "make test" pass,
-	# workaround for kubebuilder upstream bug
-	# https://github.com/kubernetes-sigs/kubebuilder/issues/326#issuecomment-494878466
+# download and install kubebuilder on the host to get "make test" pass,
+# workaround for kubebuilder upstream bug
+# https://github.com/kubernetes-sigs/kubebuilder/issues/326#issuecomment-494878466
+ifeq ($(OS), Darwin)
+	rm -rf kubebuilder_2.0.0-alpha.1_darwin_amd64*
+	wget -q https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.0.0-alpha.1/kubebuilder_2.0.0-alpha.1_darwin_amd64.tar.gz
+	tar -zxf  kubebuilder_2.0.0-alpha.1_darwin_amd64.tar.gz
+	rm -rf kubebuilder_2.0.0-alpha.1_darwin_amd64.tar.gz
+	# run go test
+	export KUBEBUILDER_ASSETS=`pwd`/kubebuilder_2.0.0-alpha.1_darwin_amd64/bin && \
+	  go test ./api/... ./controllers/... -coverprofile cover.out
+	rm -rf kubebuilder_2.0.0-alpha.1_darwin_amd64*
+else
 	rm -rf kubebuilder_2.0.0-alpha.1_linux_amd64*
 	wget -q https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.0.0-alpha.1/kubebuilder_2.0.0-alpha.1_linux_amd64.tar.gz
 	tar -zxf  kubebuilder_2.0.0-alpha.1_linux_amd64.tar.gz
@@ -16,6 +27,7 @@ test: fmt vet
 	export KUBEBUILDER_ASSETS=`pwd`/kubebuilder_2.0.0-alpha.1_linux_amd64/bin && \
 	  go test ./api/... ./controllers/... -coverprofile cover.out
 	rm -rf kubebuilder_2.0.0-alpha.1_linux_amd64*
+endif
 
 # Build manager binary at bin/manager
 build-binary: fmt vet
@@ -69,7 +81,7 @@ clean: delete-k8s
 	-docker images --format "{{.ID}} {{.Repository}} {{.Tag}}" | \
 	  grep '<none>\|ccp-istio-operator\|golang\|debian.*9.9-slim' | \
 	  awk '{print $1}' | xargs docker rmi -f
-	rm -rf bin kubebuilder_2.0.0-alpha.1_linux_amd64* kustomize cover.out \
+	rm -rf bin kubebuilder_2.0.0-alpha.1_* kustomize cover.out \
 	       istio-values.yaml istio-init-values.yaml
 
 ######################################################################
