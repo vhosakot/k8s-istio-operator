@@ -33,3 +33,8 @@ spec:
         hostPath:
           path: {{ .Values.chartsPath }}
           type: Directory
+      # run ccp-istio-operator pod on master node containing istio tgz helm charts at
+      # {{ .Values.chartsPath }} which will be mounted inside the container
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master

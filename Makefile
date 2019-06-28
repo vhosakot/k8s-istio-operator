@@ -21,13 +21,13 @@ test: fmt vet
 build-binary: fmt vet
 	go build -o bin/manager main.go
 	# to run the binary do:
-	  # kubectl apply -f helm/templates/crd.yaml
+	  # kubectl apply -f charts/ccp-istio-operator/templates/crd.yaml
 	  # ./bin/manager
 
 # Run ccp-istio-operator go binary against the configured Kubernetes cluster in ~/.kube/config
 run-binary: fmt vet
 	# create ccp-istio-operator CRD
-	kubectl apply -f helm/templates/crd.yaml
+	kubectl apply -f charts/ccp-istio-operator/templates/crd.yaml
 	go run main.go
 	# deploy istio CR by doing "kubectl apply -f ccp-istio-cr.yaml"
 
@@ -42,7 +42,7 @@ vet:
 # Deploy ccp-istio-operator on k8s
 deploy-k8s:
 	# set image.pullPolicy to "Never" to pull locally built docker image into k8s pod
-	helm install ./helm/ --name ccp-istio-operator \
+	helm install charts/ccp-istio-operator/ --name ccp-istio-operator \
 	  --set image.tag=${TAG} \
 	  --set image.pullPolicy=Never
 
@@ -81,8 +81,8 @@ clean: delete-k8s
 # Istio operator's CRD will be generated at                          #
 # config/crd/bases/operator.ccp.cisco.com_istios.yaml                #
 #                                                                    #
-# Istio operator's CRD helm/templates/crd.yaml is a copy of          #
-# config/crd/bases/operator.ccp.cisco.com_istios.yaml                #
+# Istio operator's CRD charts/ccp-istio-operator/templates/crd.yaml  #
+# is a copy of config/crd/bases/operator.ccp.cisco.com_istios.yaml   #
 ######################################################################
 
 # Build manager binary
@@ -94,7 +94,7 @@ manager: generate fmt vet
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./api/...;./controllers/..." output:crd:artifacts:config=config/crd/bases
-	cp config/crd/bases/operator.ccp.cisco.com_istios.yaml helm/templates/crd.yaml
+	cp config/crd/bases/operator.ccp.cisco.com_istios.yaml charts/ccp-istio-operator/templates/crd.yaml
 
 # Generate code
 generate: controller-gen
