@@ -382,8 +382,11 @@ func (r *IstioReconciler) IstioCRSpecIsValid(ist operatorv1alpha1.Istio) bool {
 	}
 	if _, err := os.Stat(ist.Spec.CcpIstioInit.Chart); os.IsNotExist(err) &&
 		!strings.HasPrefix(ist.Spec.CcpIstioInit.Chart, "http") {
-		e := fmt.Sprintf("istio-init helm chart %s %s", ist.Spec.CcpIstioInit.Chart,
-			"does not exist.")
+		e := fmt.Sprintf("istio-init helm chart %s does not exist. "+
+			"Make sure that istio-init helm chart %s exists on the host running this pod, %s on "+
+			"the host will be mounted inside the istio-operator container. Check value of chartsPath "+
+			"in istio-operator's helm chart.", ist.Spec.CcpIstioInit.Chart, ist.Spec.CcpIstioInit.Chart,
+			ist.Spec.CcpIstioInit.Chart)
 		r.Log.Error(errors.New(e), e)
 		return false
 	}
@@ -398,8 +401,11 @@ func (r *IstioReconciler) IstioCRSpecIsValid(ist operatorv1alpha1.Istio) bool {
 	}
 	if _, err := os.Stat(ist.Spec.CcpIstio.Chart); os.IsNotExist(err) &&
 		!strings.HasPrefix(ist.Spec.CcpIstio.Chart, "http") {
-		e := fmt.Sprintf("istio helm chart %s %s", ist.Spec.CcpIstio.Chart,
-			"does not exist.")
+		e := fmt.Sprintf("istio helm chart %s does not exist. "+
+			"Make sure that istio helm chart %s exists on the host running this pod, %s on "+
+			"the host will be mounted inside the istio-operator container. Check value of chartsPath "+
+			"in istio-operator's helm chart.", ist.Spec.CcpIstio.Chart, ist.Spec.CcpIstio.Chart,
+			ist.Spec.CcpIstio.Chart)
 		r.Log.Error(errors.New(e), e)
 		return false
 	}
