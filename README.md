@@ -26,7 +26,9 @@ $ ls -l /opt/ccp/charts/istio-*
 -rw-r--r--@ 1 root  staff   9541 Jun 21 18:41 /opt/ccp/charts/istio-init-1.1.8-ccp1.tgz
 ```
 
-In the docker GUI on Mac, add the path `/opt/ccp/charts` in `Preferences --> File Sharing`.
+In the docker GUI on Mac, add the path `/opt/ccp/charts` in `Preferences --> File Sharing`:
+
+![Mac Docker mount](https://wwwin-github.cisco.com/CPSG/ccp-istio-operator/blob/master/mac_docker_mount.png)
 
 ### If using minikube
 
@@ -317,3 +319,19 @@ kubectl apply -f charts/ccp-istio-operator/templates/crd.yaml
 ```
 
 Running CCP istio-operator as a binary outside the k8s pod is not supported currently as the k8s APIs used by the istio operator talk to the kubernetes api-server, and k8s APIs currently authenticate and work only inside a kubernetes pod (which has the right service account mounted and the environment variables `KUBERNETES_SERVICE_HOST` and `KUBERNETES_SERVICE_PORT` needed for k8s APIs to work).
+
+### Versions
+
+The following versions of softwares were used to develop CCP istio-operator
+
+* Golang 1.12.5
+* Kubernetes 1.13.5, 1.14.1
+* Kubectl 1.13.5, 1.14.1
+* Helm 2.12.0
+* Kubebuilder 2.0.0-alpha.1
+* Docker on Ubuntu 18.09.5 Community
+* Docker Desktop for Mac 2.0.5.0 Community Edge
+* VirtualBox 5.2.30 on Mac with Minikube 1.2.0
+* Minikube 1.0.1, 1.2.0
+
+

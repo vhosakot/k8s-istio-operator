@@ -101,4 +101,4 @@ You should see the following logs in the terminal in which `make run` above was 
 
 ### Stop controller manager
 
-Hit CTRL+C (^C) in the terminal in which `make run` above was run to stop the controller manager.
+Hit `CTRL+C` (^C) in the terminal in which `make run` above was run to stop the controller manager.
