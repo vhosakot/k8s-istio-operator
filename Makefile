@@ -1,5 +1,9 @@
 REGISTRY ?= "registry.ci.ciscolabs.com/cpsg_ccp-istio-operator"
+
+# tag/version of docker image
 TAG ?= $(shell git describe --always --abbrev=7 2>/dev/null || echo devbuild)
+
+HELM_CHART_VERSION ?= $(shell helm inspect chart charts/ccp-istio-operator/ | grep version | awk '{print $$2}')
 OS := $(shell uname)
 
 all: manager
@@ -66,8 +70,8 @@ delete-k8s:
 
 # Build docker image
 docker-build: test
-	make clean
-	make clean
+	make clean > /dev/null 2>&1
+	make clean > /dev/null 2>&1
 	# if using minikube for dev, run:
 	#  eval $(minikube docker-env)
 	docker build . -t ${REGISTRY}/ccp-istio-operator:${TAG}
@@ -78,7 +82,8 @@ docker-push:
 	docker push ${REGISTRY}/ccp-istio-operator:${TAG}
 
 helm-package:
-	helm package charts/ccp-istio-operator/
+	helm init --client-only
+	helm package --version "${HELM_CHART_VERSION}-${TAG}" charts/ccp-istio-operator/
 
 # Delete ccp-istio-operator on k8s, docker images and other unwanted files
 clean: delete-k8s
