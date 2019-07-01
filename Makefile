@@ -1,4 +1,4 @@
-IMG ?= ccp-istio-operator
+REGISTRY ?= "registry.ci.ciscolabs.com/cpsg_ccp-istio-operator"
 TAG ?= $(shell git describe --always --abbrev=7 2>/dev/null || echo devbuild)
 OS := $(shell uname)
 
@@ -51,11 +51,12 @@ fmt:
 vet:
 	go vet ./...
 
-# Deploy ccp-istio-operator on k8s
+# Pull locally built docker image and deploy ccp-istio-operator on k8s
 deploy-k8s:
 	# set image.pullPolicy to "Never" to pull locally built docker image into k8s pod
 	helm install charts/ccp-istio-operator/ --name ccp-istio-operator \
-	  --set image.tag=${TAG} \
+	  --set image.repo=${REGISTRY}/ccp-istio-operator \
+	  --set-string image.tag=${TAG} \
 	  --set image.pullPolicy=Never
 
 # Delete ccp-istio-operator on k8s
@@ -69,12 +70,15 @@ docker-build: test
 	make clean
 	# if using minikube for dev, run:
 	#  eval $(minikube docker-env)
-	#  minikube ssh "sudo mkdir -p /opt/ccp/charts/"
-	docker build . -t ${IMG}:${TAG}
+	docker build . -t ${REGISTRY}/ccp-istio-operator:${TAG}
 
 # Push docker image
 docker-push:
-	docker push ${IMG}:${TAG}
+	# make sure that "docker login ${REGISTRY}" works
+	docker push ${REGISTRY}/ccp-istio-operator:${TAG}
+
+helm-package:
+	helm package charts/ccp-istio-operator/
 
 # Delete ccp-istio-operator on k8s, docker images and other unwanted files
 clean: delete-k8s
@@ -82,7 +86,7 @@ clean: delete-k8s
 	  grep '<none>\|ccp-istio-operator\|golang\|debian.*9.9-slim' | \
 	  awk '{print $1}' | xargs docker rmi -f
 	rm -rf bin kubebuilder_2.0.0-alpha.1_* kustomize cover.out \
-	       istio-values.yaml istio-init-values.yaml
+	       istio-values.yaml istio-init-values.yaml ccp-istio-operator-*.tgz
 
 ######################################################################
 # Kubebuilder's code generation make targets.                        #

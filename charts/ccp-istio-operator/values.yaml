@@ -1,7 +1,7 @@
 # Default values for ccp-istio-operator used by helm
 
 image:
-  repo: ccp-istio-operator
+  repo: registry.ci.ciscolabs.com/cpsg_ccp-istio-operator/ccp-istio-operator
   tag: d95c870
   pullPolicy: Always
 

@@ -31,3 +31,6 @@ kustomize
 # values files needed for helm generated from istio CR spec
 istio-values.yaml
 istio-init-values.yaml
+
+# helm package
+ccp-istio-operator-*.tgz

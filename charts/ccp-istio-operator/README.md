@@ -21,8 +21,8 @@ git clone git@wwwin-github.cisco.com:CPSG/ccp-istio-operator.git
 cd ccp-istio-operator
 
 helm install charts/ccp-istio-operator/ --name ccp-istio-operator \
-    --set image.repo=containers.cisco.com/vhosakot/ccp-istio-operator \
-    --set image.tag=c9d179b
+    --set image.repo=registry.ci.ciscolabs.com/cpsg_ccp-istio-operator/ccp-istio-operator \
+    --set-string image.tag=c9d179b
 
 $ helm ls | grep 'NAME\|ccp-istio-operator'
 NAME                	REVISION	UPDATED                 	STATUS  	CHART                     	APP VERSION	NAMESPACE
