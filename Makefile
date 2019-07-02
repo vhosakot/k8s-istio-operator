@@ -3,6 +3,7 @@ REGISTRY ?= "registry.ci.ciscolabs.com/cpsg_ccp-istio-operator"
 TAG ?= $(shell git describe --always --abbrev=7 2>/dev/null || echo devbuild)
 HELM_CHART_VERSION ?= $(shell helm inspect chart charts/ccp-istio-operator/ | grep version | awk '{print $$2}')
 OS := $(shell uname)
+# repo for premerge/postmerge helm charts
 HELM_REPO := https://repo-write.ci.ciscolabs.com/CPSG_ccp-istio-operator/
 
 all: manager
