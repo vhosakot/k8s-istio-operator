@@ -14,6 +14,7 @@ test: fmt vet
 # workaround for kubebuilder upstream bug
 # https://github.com/kubernetes-sigs/kubebuilder/issues/326#issuecomment-494878466
 ifeq ($(OS), Darwin)
+	# Mac OS
 	rm -rf kubebuilder_2.0.0-alpha.1_darwin_amd64*
 	wget -q https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.0.0-alpha.1/kubebuilder_2.0.0-alpha.1_darwin_amd64.tar.gz
 	tar -zxf  kubebuilder_2.0.0-alpha.1_darwin_amd64.tar.gz
