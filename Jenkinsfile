@@ -68,8 +68,8 @@ pipeline {
                           usernameVariable: "HELM_REPO_USERNAME",
                           passwordVariable: "HELM_REPO_PASSWORD"]]) {
           sh '''
-            echo "Helm chart build and upload"
             make helm-package
+            make helm-upload
             '''
         }
       }

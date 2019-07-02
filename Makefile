@@ -1,10 +1,9 @@
 REGISTRY ?= "registry.ci.ciscolabs.com/cpsg_ccp-istio-operator"
-
 # tag/version of docker image
 TAG ?= $(shell git describe --always --abbrev=7 2>/dev/null || echo devbuild)
-
 HELM_CHART_VERSION ?= $(shell helm inspect chart charts/ccp-istio-operator/ | grep version | awk '{print $$2}')
 OS := $(shell uname)
+HELM_REPO := https://repo-write.ci.ciscolabs.com/CPSG_ccp-istio-operator/
 
 all: manager
 
@@ -84,6 +83,10 @@ docker-push:
 helm-package:
 	helm init --client-only
 	helm package --version "${HELM_CHART_VERSION}-${TAG}" charts/ccp-istio-operator/
+
+helm-upload:
+	test -n "$(BUILD_TYPE)"  # $$BUILD_TYPE
+	curl --fail -u $(HELM_REPO_USERNAME):$(HELM_REPO_PASSWORD) -X POST -F "file=@ccp-istio-operator-${HELM_CHART_VERSION}-${TAG}.tgz" -F "path=$(BUILD_TYPE)/" $(HELM_REPO)
 
 # Delete ccp-istio-operator on k8s, docker images and other unwanted files
 clean: delete-k8s
