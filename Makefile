@@ -79,7 +79,8 @@ docker-build: test
 
 # Push docker image
 docker-push:
-	# make sure that "docker login ${REGISTRY}" works
+	# make sure that "docker login ${REGISTRY}" works,
+	# image is pushed by CI to internal registry https://registry.ci.ciscolabs.com/v2/cpsg_ccp-istio-operator/ccp-istio-operator/tags/list
 	docker push ${REGISTRY}/ccp-istio-operator:${TAG}
 
 helm-package:
@@ -88,6 +89,7 @@ helm-package:
 
 helm-upload:
 	test -n "$(BUILD_TYPE)"  # $$BUILD_TYPE
+	# CI uploads helm charts to https://repo.ci.ciscolabs.com/CPSG_ccp-istio-operator/
 	curl --fail -u $(HELM_REPO_USERNAME):$(HELM_REPO_PASSWORD) -X POST -F "file=@ccp-istio-operator-${HELM_CHART_VERSION}-${TAG}.tgz" -F "path=$(BUILD_TYPE)/" $(HELM_REPO)
 
 # Delete ccp-istio-operator on k8s, docker images and other unwanted files
