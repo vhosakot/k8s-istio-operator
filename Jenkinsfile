@@ -74,6 +74,7 @@ pipeline {
         }
       }
     }
+    /*
     stage('Install and delete CCP istio-operator and istio CR') {
       options {
         timeout(time: 10, unit: 'MINUTES')
@@ -91,6 +92,7 @@ pipeline {
         '''
       }
     }
+    */
   }
   post {
       success {

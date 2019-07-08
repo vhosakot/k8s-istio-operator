@@ -334,4 +334,20 @@ The following versions of softwares were used to develop CCP istio-operator
 * VirtualBox 5.2.30 on Mac with Minikube 1.2.0
 * Minikube 1.0.1, 1.2.0
 
+### Testing
 
+Run `ginkgo/gomega` unit tests to create CRD
+
+```
+make test
+```
+
+Run e2e test that installs, tests and deletes istio CR
+
+```
+# deploy CCP istio-operator if it does not exist
+make deploy-k8s
+
+# run e2e test
+make test-istio-cr
+```
