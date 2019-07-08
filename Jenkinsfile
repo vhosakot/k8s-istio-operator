@@ -74,6 +74,23 @@ pipeline {
         }
       }
     }
+    stage('Install and delete CCP istio-operator and istio CR') {
+      options {
+        timeout(time: 10, unit: 'MINUTES')
+      }
+      steps {
+        sh '''
+        helm init
+        # wait 2 minutes so tiller is up
+        sleep 120
+        make deploy-k8s
+        # wait 1 minute so CCP istio-operator is up
+        sleep 60
+        make test-istio-cr
+        make delete-k8s
+        '''
+      }
+    }
   }
   post {
       success {

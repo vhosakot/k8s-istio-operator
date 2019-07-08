@@ -92,6 +92,14 @@ helm-upload:
 	# CI uploads helm charts to https://repo.ci.ciscolabs.com/CPSG_ccp-istio-operator/
 	curl --fail -u $(HELM_REPO_USERNAME):$(HELM_REPO_PASSWORD) -X POST -F "file=@ccp-istio-operator-${HELM_CHART_VERSION}-${TAG}.tgz" -F "path=$(BUILD_TYPE)/" $(HELM_REPO)
 
+# install and test istio CR
+test-istio-cr:
+	echo "======== Installing istio CR ========"
+	./tests/test_istio_cr.sh create
+	sleep 30
+	echo -e "\n\n======== Deleting istio CR ========\n\n"
+	./tests/test_istio_cr.sh delete
+
 # Delete ccp-istio-operator on k8s, docker images and other unwanted files
 clean: delete-k8s
 	-docker images --format "{{.ID}} {{.Repository}} {{.Tag}}" | \
