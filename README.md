@@ -51,6 +51,7 @@ total 92
 If helm and tiller are not installed in the k8s cluster, install them.
 
 ```
+# install helm 2.12.0 or 2.14.1 if needed
 wget https://get.helm.sh/helm-v2.12.2-darwin-amd64.tar.gz
 tar -zxvf helm-v2.12.2-darwin-amd64.tar.gz
 sudo mv darwin-amd64/helm /usr/local/bin/
@@ -327,7 +328,7 @@ The following versions of softwares were used to develop CCP istio-operator
 * Golang 1.12.5
 * Kubernetes 1.13.5, 1.14.1
 * Kubectl 1.13.5, 1.14.1
-* Helm 2.12.0
+* Helm 2.12.0, 2.14.1
 * Kubebuilder 2.0.0-alpha.1
 * Docker on Ubuntu 18.09.5 Community
 * Docker Desktop for Mac 2.0.5.0 Community Edge
