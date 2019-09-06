@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.12.5 as builder
+FROM golang:1.12.9 as builder
 
 WORKDIR /go/src/wwwin-github.cisco.com/CPSG/ccp-istio-operator
 # Copy the go source
