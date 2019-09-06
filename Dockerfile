@@ -2,11 +2,11 @@
 FROM golang:1.12.9 as builder
 
 WORKDIR /go/src/wwwin-github.cisco.com/CPSG/ccp-istio-operator
+COPY vendor/ vendor/
 # Copy the go source
 COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
-COPY vendor/ vendor/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
