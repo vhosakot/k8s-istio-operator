@@ -332,8 +332,8 @@
   revision = "22d7a77e9e5f409e934ed268692e56707cd169e5"
 
 [[projects]]
-  branch = "master"
-  digest = "1:e3afd5db0268aa74ed14c87e9d96bb048a724c0fb731405638693e8b546f55bb"
+  branch = "release-branch.go1.12"
+  digest = "1:3b2c9de7bd09db7055bf6728bafcac9290b9c6585e7e165675bb935d5876262e"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -347,7 +347,8 @@
     "idna",
   ]
   pruneopts = "UT"
-  revision = "018c4d40a106a7ae83689758294fcd8d23850745"
+  revision = "cdfb69ac37fc6fa907650654115ebebb3aae2087"
+  source = "golang.org/x/net"
 
 [[projects]]
   branch = "master"
@@ -765,10 +766,12 @@
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
     "golang.org/x/net/context",
+    "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/types",
+    "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
     "k8s.io/client-go/rest",
