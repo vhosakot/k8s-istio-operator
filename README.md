@@ -82,7 +82,7 @@ cd $GOPATH/src/wwwin-github.cisco.com/CPSG
 
 # add your host's SSH public key in https://wwwin-github.cisco.com/settings/keys
 
-git clone git@wwwin-github.cisco.com:CPSG/ccp-istio-operator.git
+git clone git@github.com:vhosakot/k8s-istio-operator.git
 cd ccp-istio-operator
 
 # if using minikube, run the following command
@@ -352,6 +352,12 @@ make test
 Run e2e test that installs, tests and deletes istio CR
 
 ```
+# create ccp-istio-operator CRD.
+kubectl apply -f config/crd/bases/
+
+eval $(minikube docker-env)
+make docker-build
+
 # deploy CCP istio-operator if it does not exist
 make deploy-k8s
 

@@ -19,7 +19,7 @@ if [ "$1" == "create" ] ; then
                 echo -e "\nERROR: Istio CR did not reach active state and istio was not installed successfully, waited for 10 minutes.\n"
                 kubectl get pods -n=istio-system
                 echo "ccp-istio-operator pod's logs below:"
-                kubectl get pods | grep ccp-istio-operator-6947d46c67-qbc2n | awk '{print $1}' | xargs kubectl logs
+                kubectl get pods | grep ccp-istio-operator | awk '{print $1}' | xargs kubectl logs
                 exit 1
             fi
             echo -e "\nWaiting for istio CR to be active ..."
@@ -38,7 +38,7 @@ elif [ "$1" == "delete" ] ; then
                 kubectl get istio
                 kubectl get pods -n=istio-system
                 echo "ccp-istio-operator pod's logs below:"
-                kubectl get pods | grep ccp-istio-operator-6947d46c67-qbc2n | awk '{print $1}' | xargs kubectl logs
+                kubectl get pods | grep ccp-istio-operator | awk '{print $1}' | xargs kubectl logs
                 exit 1
             fi
             echo -e "\nWaiting for istio to be deleted ..."

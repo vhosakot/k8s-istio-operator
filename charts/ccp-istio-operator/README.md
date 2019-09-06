@@ -17,7 +17,7 @@ $ ls -l /opt/ccp/charts/istio-*
 ```
 # add your host's SSH public key in https://wwwin-github.cisco.com/settings/keys
 
-git clone git@wwwin-github.cisco.com:CPSG/ccp-istio-operator.git
+git clone git@github.com:vhosakot/k8s-istio-operator.git
 cd ccp-istio-operator
 ```
 
