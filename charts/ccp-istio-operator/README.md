@@ -19,7 +19,15 @@ $ ls -l /opt/ccp/charts/istio-*
 
 git clone git@wwwin-github.cisco.com:CPSG/ccp-istio-operator.git
 cd ccp-istio-operator
+```
 
+Create ccp-istio-operator CRD.
+
+```
+kubectl apply -f config/crd/bases/
+```
+
+```
 helm install charts/ccp-istio-operator/ --name ccp-istio-operator \
     --set image.repo=registry.ci.ciscolabs.com/cpsg_ccp-istio-operator/ccp-istio-operator \
     --set-string image.tag=c9d179b
@@ -40,7 +48,6 @@ ccp-istio-operator-5684596f9d-mttdp   1/1     Running   0          2m28s   192.1
 
 $ kubectl get crds | grep istios.operator.ccp.cisco.com
 istios.operator.ccp.cisco.com                 2019-07-01T15:49:14Z
-
 ```
 
 Now, CCP istio-operator is installed and can be used to operate (install, upgrade, repair, reconfigure and uninstall) istio on kubernetes.
@@ -130,11 +137,8 @@ No resources found.
 $ kubectl get all -n=istio-system
 No resources found.
 
-# delete CCP istio-operator helm chart and its CRD
+# delete CCP istio-operator helm chart
 helm delete --purge ccp-istio-operator
-
-$ kubectl get crds | grep istios.operator.ccp.cisco.com
-$
 ```
 
 Configurations of CCP istio-operator's helm charts are in `values.yaml` and can be set using `--set foo=bar` with the `helm install` command.

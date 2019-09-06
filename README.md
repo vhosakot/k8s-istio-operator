@@ -89,6 +89,12 @@ cd ccp-istio-operator
 eval $(minikube docker-env)
 ```
 
+Create ccp-istio-operator CRD.
+
+```
+kubectl apply -f config/crd/bases/
+```
+
 Make sure that docker commands like `docker images` can be run without `sudo`. Refer https://docs.docker.com/install/linux/linux-postinstall/#manage-docker-as-a-non-root-user.
 
 ```
@@ -310,12 +316,12 @@ make clean
 ### Running CCP istio-operator as a binary on the host outside the container/k8s pod
 
 ```
-run-binary
+make run-binary
 
 ## OR ##
 
 make build-binary
-kubectl apply -f charts/ccp-istio-operator/templates/crd.yaml
+kubectl apply -f config/crd/bases/
 ./bin/manager
 ```
 

@@ -38,13 +38,14 @@ endif
 build-binary: fmt vet
 	go build -o bin/manager main.go
 	# to run the binary do:
-	  # kubectl apply -f charts/ccp-istio-operator/templates/crd.yaml
+	  # create ccp-istio-operator CRD
+	  # kubectl apply -f config/crd/bases/
 	  # ./bin/manager
 
 # Run ccp-istio-operator go binary against the configured Kubernetes cluster in ~/.kube/config
 run-binary: fmt vet
 	# create ccp-istio-operator CRD
-	kubectl apply -f charts/ccp-istio-operator/templates/crd.yaml
+	kubectl apply -f config/crd/bases/
 	go run main.go
 	# deploy istio CR by doing "kubectl apply -f ccp-istio-cr.yaml"
 
@@ -58,6 +59,8 @@ vet:
 
 # Pull locally built docker image and deploy ccp-istio-operator on k8s
 deploy-k8s:
+	# create ccp-istio-operator CRD
+	# kubectl apply -f config/crd/bases/
 	# set image.pullPolicy to "Never" to pull locally built docker image into k8s pod
 	helm install charts/ccp-istio-operator/ --name ccp-istio-operator \
 	  --set image.repo=${REGISTRY}/ccp-istio-operator \
@@ -116,9 +119,6 @@ clean: delete-k8s
 #                                                                    #
 # Istio operator's CRD will be generated at                          #
 # config/crd/bases/operator.ccp.cisco.com_istios.yaml                #
-#                                                                    #
-# Istio operator's CRD charts/ccp-istio-operator/templates/crd.yaml  #
-# is a copy of config/crd/bases/operator.ccp.cisco.com_istios.yaml   #
 ######################################################################
 
 # Build manager binary
@@ -130,7 +130,6 @@ manager: generate fmt vet
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./api/...;./controllers/..." output:crd:artifacts:config=config/crd/bases
-	cp config/crd/bases/operator.ccp.cisco.com_istios.yaml charts/ccp-istio-operator/templates/crd.yaml
 
 # Generate code
 generate: controller-gen

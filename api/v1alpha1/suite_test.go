@@ -49,8 +49,6 @@ var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
 
 	By("bootstrapping test environment")
-	// Istio operator's CRD helm/templates/crd.yaml is a copy of
-	// config/crd/bases/operator.ccp.cisco.com_istios.yaml
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 	}
