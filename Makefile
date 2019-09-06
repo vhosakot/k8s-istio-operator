@@ -70,7 +70,6 @@ deploy-k8s:
 # Delete ccp-istio-operator on k8s
 delete-k8s:
 	-helm delete --purge ccp-istio-operator
-	-kubectl delete crd istios.operator.ccp.cisco.com
 
 # Build docker image
 docker-build: test
